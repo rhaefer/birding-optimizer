@@ -29,7 +29,7 @@ export default function RootLayout({
       <body className={`${inter.className} bg-gray-50 min-h-screen`}>
         <AppProvider>
           <Navigation />
-          <main>{children}</main>
+          <main className="pb-16 md:pb-0">{children}</main>
         </AppProvider>
       </body>
     </html>

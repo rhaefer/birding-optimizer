@@ -267,7 +267,7 @@ export default function AlertsPage() {
 
           {/* Map */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden h-[560px]">
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden h-64 md:h-[560px]">
               <AlertsMap
                 alerts={displayedAlerts}
                 selectedAlert={selectedAlert}

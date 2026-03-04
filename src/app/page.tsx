@@ -362,30 +362,30 @@ export default function Dashboard() {
     <div className="max-w-7xl mx-auto px-4 py-6">
       {/* Big Year Stats Bar */}
       <div className="bg-green-900 text-white rounded-2xl p-6 mb-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold">{bigYearYear} Big Year</h1>
-            <p className="text-green-300 text-sm mt-0.5">
+            <h1 className="text-xl sm:text-2xl font-bold">{bigYearYear} Big Year</h1>
+            <p className="text-green-300 text-xs sm:text-sm mt-0.5">
               {daysRemaining} days remaining &bull; {dayOfYear} days elapsed
             </p>
           </div>
 
-          <div className="flex items-center gap-4 flex-wrap">
-            <div className="flex gap-6">
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex gap-3 sm:gap-6">
               <div className="text-center">
-                <div className="text-3xl font-bold text-green-300">{userSpecies.length}</div>
+                <div className="text-2xl sm:text-3xl font-bold text-green-300">{userSpecies.length}</div>
                 <div className="text-xs text-green-400 uppercase tracking-wide">Species</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-white">{bigYearGoal}</div>
+                <div className="text-2xl sm:text-3xl font-bold text-white">{bigYearGoal}</div>
                 <div className="text-xs text-green-400 uppercase tracking-wide">Goal</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-yellow-300">{Math.round(progress)}%</div>
-                <div className="text-xs text-green-400 uppercase tracking-wide">Complete</div>
+                <div className="text-2xl sm:text-3xl font-bold text-yellow-300">{Math.round(progress)}%</div>
+                <div className="text-xs text-green-400 uppercase tracking-wide">Done</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-blue-300">{pace.toFixed(0)}</div>
+                <div className="text-2xl sm:text-3xl font-bold text-blue-300">{pace.toFixed(0)}</div>
                 <div className="text-xs text-green-400 uppercase tracking-wide">Pace/yr</div>
               </div>
             </div>
@@ -393,10 +393,11 @@ export default function Dashboard() {
             {/* Import button */}
             <button
               onClick={() => setShowImport(true)}
-              className="flex items-center gap-2 bg-green-700 hover:bg-green-600 text-white text-sm font-medium px-4 py-2.5 rounded-xl transition-colors border border-green-600 whitespace-nowrap"
+              className="flex items-center gap-2 bg-green-700 hover:bg-green-600 text-white text-sm font-medium px-3 sm:px-4 py-2.5 rounded-xl transition-colors border border-green-600 whitespace-nowrap"
             >
               <span>📥</span>
-              Import eBird Data
+              <span className="hidden sm:inline">Import eBird Data</span>
+              <span className="sm:hidden">Import</span>
             </button>
           </div>
         </div>

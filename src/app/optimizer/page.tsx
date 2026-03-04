@@ -180,7 +180,7 @@ export default function OptimizerPage() {
 
         {/* Map + Results */}
         <div className="lg:col-span-2 space-y-4">
-          <div className="bg-white rounded-lg shadow-md overflow-hidden h-[400px]">
+          <div className="bg-white rounded-lg shadow-md overflow-hidden h-64 md:h-[400px]">
             <Map
               userLocation={searchLocation}
               recommendations={recommendations}

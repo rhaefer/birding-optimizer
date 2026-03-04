@@ -324,7 +324,7 @@ export default function BirdSearchPage() {
 
           {/* Map */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden h-[500px]">
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden h-64 md:h-[500px]">
               <BirdSearchMap
                 observations={observations}
                 selectedObs={selectedObs}
