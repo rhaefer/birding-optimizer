@@ -32,13 +32,10 @@ export default function FilterPanel({
   }, [userLocation]);
 
   const handleDistanceChange = (value: number) => {
-    const distanceKm = useMiles ? milesToKm(value) : value;
-    onFiltersChange({ ...filters, maxDistance: distanceKm });
+    onFiltersChange({ ...filters, maxDistance: milesToKm(value) });
   };
 
-  const displayDistance = useMiles
-    ? Math.round(kmToMiles(filters.maxDistance))
-    : Math.round(filters.maxDistance);
+  const displayDistance = Math.round(kmToMiles(filters.maxDistance));
 
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
