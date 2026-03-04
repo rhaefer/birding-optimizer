@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { FilterSettings, UserLocation } from '@/types';
 import { kmToMiles, milesToKm } from '@/lib/distance';
 
