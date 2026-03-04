@@ -196,10 +196,13 @@ function ImportModal({
         <div className="p-6">
           {activeTab === 'csv' && (
             <div>
-              <ol className="text-sm text-gray-600 space-y-2 mb-5 list-decimal list-inside">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">Most accurate — your personal data</span>
+              </div>
+              <ol className="text-sm text-gray-600 space-y-2 mb-4 list-decimal list-inside">
                 <li>Go to <a href="https://ebird.org/downloadMyData" target="_blank" rel="noopener noreferrer" className="text-green-600 underline font-medium">ebird.org/downloadMyData</a></li>
-                <li>Click <strong>Download</strong> to get your MyEBirdData.csv</li>
-                <li>Upload it below — only this year&apos;s species will be imported</li>
+                <li>Click <strong>Download My Data</strong> to get your CSV</li>
+                <li>Upload below — only {new Date().getFullYear()} species are imported</li>
               </ol>
               <label className="flex items-center justify-center w-full py-4 px-4 border-2 border-dashed border-green-300 rounded-xl cursor-pointer hover:border-green-500 hover:bg-green-50 transition-colors">
                 <div className="text-center">
