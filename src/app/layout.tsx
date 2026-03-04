@@ -1,12 +1,14 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
+import { AppProvider } from '@/components/AppProvider';
+import Navigation from '@/components/Navigation';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Big Year Birding Optimizer',
-  description: 'Find the best birding hotspots to maximize new species for your Big Year',
+  title: 'Big Year - Birding App',
+  description: 'The ultimate app for Big Year birding: hotspot optimizer, rare bird alerts, bird search, and month-by-month planning.',
 };
 
 export default function RootLayout({
@@ -24,7 +26,12 @@ export default function RootLayout({
           crossOrigin=""
         />
       </head>
-      <body className={inter.className}>{children}</body>
+      <body className={`${inter.className} bg-gray-50 min-h-screen`}>
+        <AppProvider>
+          <Navigation />
+          <main>{children}</main>
+        </AppProvider>
+      </body>
     </html>
   );
 }

@@ -15,10 +15,11 @@ export async function POST(request: NextRequest) {
     const currentYear = new Date().getFullYear();
 
     // Try multiple eBird endpoints to get the year list
-    // The lifelist page with year filter is most reliable
     const urls = [
       `https://ebird.org/lifelist/${encodeURIComponent(username)}?time=year&year=${currentYear}&r=world`,
+      `https://ebird.org/lifelist/${encodeURIComponent(username)}?time=year&year=${currentYear}`,
       `https://ebird.org/profile/${encodeURIComponent(username)}/year?yr=${currentYear}&r=world`,
+      `https://ebird.org/profile/${encodeURIComponent(username)}`,
     ];
 
     let html = '';
@@ -47,98 +48,80 @@ export async function POST(request: NextRequest) {
 
     if (!html) {
       return NextResponse.json(
-        { error: 'Could not access eBird profile. Check your username.' },
+        { error: `Could not access eBird profile for "${username}". Go to ebird.org → My eBird → Profile and check your URL username (not your display name).` },
         { status: 404 }
       );
     }
 
-    // Debug: Check if we got a valid page
-    if (html.includes('Page Not Found') || html.includes('404')) {
+    // Check if we got a valid page
+    if (html.includes('Page Not Found') || (html.includes('404') && html.length < 5000)) {
       return NextResponse.json(
-        { error: 'User not found. Check your eBird username.' },
+        { error: `eBird username "${username}" not found. Check your profile URL at ebird.org/profile/${username} — the username in that URL is what you need.` },
         { status: 404 }
       );
     }
 
     // Extract species from the HTML
-    // eBird uses a specific structure for species lists
-    const species: string[] = [];
     const seenSpecies = new Set<string>();
+    const species: string[] = [];
 
-    // Pattern 1: Species in the Observation list with data attributes
-    // <a href="/species/amerob" ... >American Robin</a>
-    const speciesLinkPattern = /href="\/species\/([^"]+)"[^>]*>([^<]+)<\/a>/gi;
-    let match;
-    while ((match = speciesLinkPattern.exec(html)) !== null) {
-      const name = match[2].trim();
-      if (name && !seenSpecies.has(name.toLowerCase())) {
-        // Filter out non-species text
-        if (
-          name.length > 2 &&
-          name.length < 60 &&
-          !name.match(/^(View|Map|Media|Details|Species|More|Less|\d)/i) &&
-          name.match(/^[A-Z]/)
-        ) {
-          seenSpecies.add(name.toLowerCase());
-          species.push(name);
-        }
+    function addSpecies(name: string) {
+      const key = name.toLowerCase().trim();
+      if (
+        key.length > 2 &&
+        name.length < 80 &&
+        !seenSpecies.has(key)
+      ) {
+        seenSpecies.add(key);
+        species.push(name.trim());
       }
     }
 
-    // Pattern 2: Species names in specific list containers
-    // Look for the Observation-species or ResultsStats sections
-    const listSectionPattern = /class="[^"]*(?:Observation|Species|Result)[^"]*"[^>]*>[\s\S]*?<\/(?:div|section|li)>/gi;
-    while ((match = listSectionPattern.exec(html)) !== null) {
-      const section = match[0];
-      // Extract species names from within this section
-      const namePattern = />([A-Z][a-z]+(?:[-'\s][A-Za-z]+){0,4})</g;
-      let nameMatch;
-      while ((nameMatch = namePattern.exec(section)) !== null) {
-        const name = nameMatch[1].trim();
-        if (
-          name.length > 3 &&
-          name.length < 50 &&
-          !seenSpecies.has(name.toLowerCase()) &&
-          !name.match(/^(View|Map|Media|Details|Species|More|Less|Show|Hide|All|Filter|Sort|Date|Location|Count|Check|Obs)/i)
-        ) {
-          // Verify it looks like a species name (typically 2+ words for birds)
-          const words = name.split(/\s+/);
-          if (words.length >= 1 && words.length <= 5) {
-            seenSpecies.add(name.toLowerCase());
-            species.push(name);
+    // Strategy 1: Parse __NEXT_DATA__ embedded JSON (most reliable for Next.js apps like eBird)
+    const nextDataMatch = html.match(/<script id="__NEXT_DATA__" type="application\/json">([^<]+)<\/script>/);
+    if (nextDataMatch) {
+      try {
+        const nextData = JSON.parse(nextDataMatch[1]);
+        // Recursively walk the JSON tree finding all "comName" values
+        function extractComNames(obj: unknown): void {
+          if (obj === null || typeof obj !== 'object') return;
+          if (Array.isArray(obj)) {
+            for (const item of obj) extractComNames(item);
+          } else {
+            const record = obj as Record<string, unknown>;
+            for (const [key, val] of Object.entries(record)) {
+              if (key === 'comName' && typeof val === 'string' && val.length > 2) {
+                addSpecies(val);
+              } else {
+                extractComNames(val);
+              }
+            }
           }
         }
+        extractComNames(nextData);
+      } catch {
+        // JSON parse failed, continue to other strategies
       }
     }
 
-    // Pattern 3: Look for the specific eBird life list format
-    // The page often has species in a table or list with specific class names
-    const rowPattern = /<tr[^>]*>[\s\S]*?<td[^>]*>[\s\S]*?href="\/species\/[^"]*"[^>]*>([^<]+)<\/a>[\s\S]*?<\/tr>/gi;
-    while ((match = rowPattern.exec(html)) !== null) {
-      const name = match[1].trim();
-      if (name && !seenSpecies.has(name.toLowerCase()) && name.length > 2) {
-        seenSpecies.add(name.toLowerCase());
-        species.push(name);
+    // Strategy 2: Any JSON blob in script tags with "comName" fields
+    if (species.length === 0) {
+      const comNamePattern = /"comName"\s*:\s*"([^"\\]+)"/g;
+      let match;
+      while ((match = comNamePattern.exec(html)) !== null) {
+        addSpecies(match[1]);
       }
     }
 
-    // Pattern 4: JSON data embedded in the page (eBird sometimes includes this)
-    const jsonPattern = /\{"speciesCode":"([^"]+)","comName":"([^"]+)"/g;
-    while ((match = jsonPattern.exec(html)) !== null) {
-      const name = match[2].trim();
-      if (name && !seenSpecies.has(name.toLowerCase())) {
-        seenSpecies.add(name.toLowerCase());
-        species.push(name);
-      }
-    }
-
-    // Pattern 5: React/Next.js data props (eBird uses React)
-    const propsPattern = /"comName"\s*:\s*"([^"]+)"/g;
-    while ((match = propsPattern.exec(html)) !== null) {
-      const name = match[1].trim();
-      if (name && !seenSpecies.has(name.toLowerCase()) && name.length > 2) {
-        seenSpecies.add(name.toLowerCase());
-        species.push(name);
+    // Strategy 3: Species links <a href="/species/CODE">Common Name</a>
+    if (species.length === 0) {
+      const speciesLinkPattern = /href="\/species\/[^"]+"\s*[^>]*>([^<]{3,60})<\/a>/gi;
+      let match;
+      while ((match = speciesLinkPattern.exec(html)) !== null) {
+        const name = match[1].trim();
+        if (name.match(/^[A-Z]/) && !name.match(/^(View|Map|Media|Details|More|Less|\d)/i)) {
+          addSpecies(name);
+        }
       }
     }
 
@@ -148,26 +131,12 @@ export async function POST(request: NextRequest) {
     console.log(`Found ${species.length} species for ${username} in ${currentYear} from ${successUrl}`);
 
     if (species.length === 0) {
-      // Return helpful debug info
-      const hasSpeciesLinks = html.includes('/species/');
-      const hasLifeList = html.includes('Life List') || html.includes('Year List');
-
       return NextResponse.json(
         {
-          error: 'Could not parse species from your eBird profile.',
-          hint: hasSpeciesLinks
-            ? 'Found species links but could not extract names. Your profile may use a different format.'
-            : hasLifeList
-              ? 'Found list page but no species. You may not have any observations for ' + currentYear + '.'
-              : 'Could not find species data. Make sure your profile is public.',
-          debug: {
-            url: successUrl,
-            hasSpeciesLinks,
-            hasLifeList,
-            htmlLength: html.length,
-          }
+          error: 'eBird username import is unavailable — eBird\'s page structure has changed. Please use the CSV Upload tab instead.',
+          hint: 'Go to ebird.org/downloadMyData to download your data, then upload the CSV file.',
         },
-        { status: 404 }
+        { status: 422 }
       );
     }
 

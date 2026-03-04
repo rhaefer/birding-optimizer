@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { FilterSettings, UserLocation } from '@/types';
 import { kmToMiles, milesToKm } from '@/lib/distance';
 
@@ -21,7 +21,6 @@ export default function FilterPanel({
   onSearch,
   isLoading,
 }: FilterPanelProps) {
-  const [useMiles, setUseMiles] = useState(true);
   const [locationInput, setLocationInput] = useState('');
   const [isGettingLocation, setIsGettingLocation] = useState(false);
 
@@ -118,29 +117,21 @@ export default function FilterPanel({
 
         {/* Distance Filter */}
         <div>
-          <div className="flex justify-between items-center mb-1">
-            <label className="block text-sm font-medium text-gray-700">
-              Maximum Distance
-            </label>
-            <button
-              onClick={() => setUseMiles(!useMiles)}
-              className="text-xs text-blue-600 hover:underline"
-            >
-              {useMiles ? 'Switch to km' : 'Switch to mi'}
-            </button>
-          </div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Maximum Distance
+          </label>
           <div className="flex items-center gap-4">
             <input
               type="range"
-              min={useMiles ? 5 : 10}
-              max={useMiles ? 30 : 50}
-              step={useMiles ? 5 : 5}
+              min={5}
+              max={30}
+              step={5}
               value={displayDistance}
               onChange={(e) => handleDistanceChange(parseInt(e.target.value))}
               className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
             />
             <span className="text-sm font-medium text-gray-700 w-16 text-right">
-              {displayDistance} {useMiles ? 'mi' : 'km'}
+              {displayDistance} mi
             </span>
           </div>
         </div>

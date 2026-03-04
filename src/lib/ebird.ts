@@ -1,6 +1,8 @@
 import {
   EBirdObservation,
   EBirdHotspot,
+  EBirdTaxonomy,
+  RareBirdAlert,
 } from '@/types';
 
 const EBIRD_API_BASE = 'https://api.ebird.org/v2';
@@ -46,8 +48,6 @@ export class EBirdClient {
 
   /**
    * Get recent observations for a region
-   * @param regionCode - Region code (e.g., "US-CO" for Colorado)
-   * @param back - Number of days back to fetch (1-30)
    */
   async getRecentObservations(
     regionCode: string,
@@ -60,10 +60,6 @@ export class EBirdClient {
 
   /**
    * Get recent observations near a location
-   * @param lat - Latitude
-   * @param lng - Longitude
-   * @param dist - Distance in km (max 50)
-   * @param back - Number of days back (1-30)
    */
   async getRecentNearbyObservations(
     lat: number,
@@ -81,9 +77,6 @@ export class EBirdClient {
 
   /**
    * Get hotspots near a location
-   * @param lat - Latitude
-   * @param lng - Longitude
-   * @param dist - Distance in km (max 50)
    */
   async getNearbyHotspots(
     lat: number,
@@ -100,8 +93,6 @@ export class EBirdClient {
 
   /**
    * Get recent observations at a specific hotspot
-   * @param locId - Location ID of the hotspot
-   * @param back - Number of days back (1-30)
    */
   async getHotspotObservations(
     locId: string,
@@ -113,8 +104,7 @@ export class EBirdClient {
   }
 
   /**
-   * Get species observed at a hotspot
-   * Returns unique species codes observed at the location
+   * Get species observed at a hotspot (deduplicated)
    */
   async getHotspotSpecies(
     locId: string,
@@ -122,7 +112,6 @@ export class EBirdClient {
   ): Promise<EBirdObservation[]> {
     const observations = await this.getHotspotObservations(locId, back);
 
-    // Deduplicate by species code, keeping the most recent observation
     const speciesMap = new Map<string, EBirdObservation>();
 
     for (const obs of observations) {
@@ -136,11 +125,89 @@ export class EBirdClient {
   }
 
   /**
-   * Validate the API key by making a simple request
+   * Get notable/rare observations near a location
+   * These are observations flagged as rare or unusual for the area
+   */
+  async getNotableNearbyObservations(
+    lat: number,
+    lng: number,
+    dist: number = 50,
+    back: number = 14
+  ): Promise<RareBirdAlert[]> {
+    const observations = await this.fetch<EBirdObservation[]>('/data/obs/geo/recent/notable', {
+      lat,
+      lng,
+      dist: Math.min(dist, 50),
+      back: Math.min(Math.max(back, 1), 30),
+      detail: 'simple',
+    });
+
+    return observations.map(obs => ({
+      ...obs,
+      locationPrivate: obs.locationPrivate ?? false,
+    }));
+  }
+
+  /**
+   * Get recent observations of a specific species near a location
+   */
+  async getSpeciesNearbyObservations(
+    speciesCode: string,
+    lat: number,
+    lng: number,
+    dist: number = 50,
+    back: number = 30
+  ): Promise<EBirdObservation[]> {
+    return this.fetch<EBirdObservation[]>(`/data/obs/geo/recent/${speciesCode}`, {
+      lat,
+      lng,
+      dist: Math.min(dist, 50),
+      back: Math.min(Math.max(back, 1), 30),
+    });
+  }
+
+  /**
+   * Search eBird taxonomy by common or scientific name
+   * Returns matching species entries
+   */
+  async searchTaxonomy(query: string, maxResults: number = 10): Promise<EBirdTaxonomy[]> {
+    // Fetch full taxonomy - filtered server-side
+    const all = await this.fetch<EBirdTaxonomy[]>('/ref/taxonomy/ebird', {
+      fmt: 'json',
+      locale: 'en',
+      cat: 'species',
+    });
+
+    const lowerQuery = query.toLowerCase().trim();
+
+    // Score and filter matches
+    const scored = all
+      .filter(t => t.category === 'species')
+      .map(t => {
+        const comLower = t.comName.toLowerCase();
+        const sciLower = t.sciName.toLowerCase();
+        let score = 0;
+
+        if (comLower === lowerQuery) score = 100;
+        else if (comLower.startsWith(lowerQuery)) score = 80;
+        else if (comLower.includes(lowerQuery)) score = 60;
+        else if (sciLower.includes(lowerQuery)) score = 40;
+        else return null;
+
+        return { ...t, _score: score };
+      })
+      .filter((t): t is EBirdTaxonomy & { _score: number } => t !== null)
+      .sort((a, b) => b._score - a._score || a.comName.localeCompare(b.comName))
+      .slice(0, maxResults);
+
+    return scored.map(({ _score: _s, ...t }) => t);
+  }
+
+  /**
+   * Validate the API key
    */
   async validateApiKey(): Promise<boolean> {
     try {
-      // Make a simple request to check if the key is valid
       await this.fetch<EBirdHotspot[]>('/ref/hotspot/geo', {
         lat: 40.0,
         lng: -105.0,
@@ -157,7 +224,6 @@ export class EBirdClient {
   }
 }
 
-// Helper function to create a client instance
 export function createEBirdClient(apiKey: string): EBirdClient {
   return new EBirdClient({ apiKey });
 }

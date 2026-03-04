@@ -37,6 +37,21 @@ export interface EBirdChecklist {
   subID: string;
 }
 
+export interface EBirdTaxonomy {
+  sciName: string;
+  comName: string;
+  speciesCode: string;
+  category: string;
+  taxonOrder: number;
+  bandingCodes?: string[];
+  comNameCodes?: string[];
+  sciNameCodes?: string[];
+  order?: string;
+  familyCode?: string;
+  familyComName?: string;
+  familySciName?: string;
+}
+
 // Application Types
 export interface UserLocation {
   lat: number;
@@ -70,6 +85,98 @@ export interface UserYearList {
   year: number;
   species: string[]; // species codes
   speciesDetails: Map<string, { comName: string; sciName: string }>;
+}
+
+// Rare Bird Alert Types
+export interface RareBirdAlert {
+  speciesCode: string;
+  comName: string;
+  sciName: string;
+  locId: string;
+  locName: string;
+  obsDt: string;
+  howMany?: number;
+  lat: number;
+  lng: number;
+  obsValid: boolean;
+  obsReviewed: boolean;
+  locationPrivate?: boolean;
+  subId: string;
+  distance?: number; // calculated distance from user in km
+  isNew?: boolean; // whether this is new for the user's year list
+}
+
+// Bird Search Types
+export interface SpeciesSearchResult {
+  speciesCode: string;
+  comName: string;
+  sciName: string;
+  order?: string;
+  familyComName?: string;
+  category: string;
+}
+
+export interface BirdSearchObservation {
+  speciesCode: string;
+  comName: string;
+  sciName: string;
+  locId: string;
+  locName: string;
+  obsDt: string;
+  howMany?: number;
+  lat: number;
+  lng: number;
+  distance?: number; // km from search location
+  subId: string;
+}
+
+// Big Year Planner Types
+export interface PlannedTrip {
+  month: number; // 1-12
+  destination: string;
+  lat?: number;
+  lng?: number;
+  durationDays: number;
+  notes?: string;
+}
+
+export interface MonthlyPlan {
+  month: number;
+  monthName: string;
+  targetGain: number;
+  cumulativeTarget: number;
+  minTarget: number;
+  maxTarget: number;
+  primaryHabitats: string[];
+  keySpeciesTypes: string[];
+  recommendedDestinationTypes: string[];
+  suggestedTrips: string[];
+  localBirdingTips: string;
+  plannedTrips: PlannedTrip[];
+}
+
+export interface BigYearPlan {
+  year: number;
+  targetSpecies: number;
+  travelIntensity: 'none' | 'light' | 'moderate' | 'aggressive';
+  homeRegion: string; // e.g. "western-us", "eastern-us", "midwest"
+  months: MonthlyPlan[];
+  totalProjected: number;
+  feasibilityNote: string;
+}
+
+// Social / Community Types (planned feature)
+export interface BirdingActivity {
+  id: string;
+  userId: string;
+  userName: string;
+  userAvatar?: string;
+  type: 'checklist' | 'lifer' | 'year_bird' | 'rare_find';
+  species?: string;
+  location: string;
+  timestamp: string;
+  count?: number;
+  notes?: string;
 }
 
 // API Request/Response Types
@@ -113,6 +220,50 @@ export interface RecommendationsResponse {
   recommendations: HotspotRecommendation[];
   totalHotspotsAnalyzed: number;
   generatedAt: string;
+}
+
+export interface BirdSearchRequest {
+  apiKey: string;
+  query: string;
+  lat: number;
+  lng: number;
+  dist?: number;
+  daysBack?: number;
+}
+
+export interface BirdSearchResponse {
+  matches: SpeciesSearchResult[];
+  observations: BirdSearchObservation[];
+  selectedSpecies?: SpeciesSearchResult;
+}
+
+export interface RareAlertsRequest {
+  apiKey: string;
+  lat: number;
+  lng: number;
+  dist?: number;
+  daysBack?: number;
+  userSpecies?: string[];
+}
+
+export interface RareAlertsResponse {
+  alerts: RareBirdAlert[];
+  total: number;
+  generatedAt: string;
+}
+
+export interface PlannerRequest {
+  lat: number;
+  lng: number;
+  targetSpecies: number;
+  year: number;
+  travelIntensity: 'none' | 'light' | 'moderate' | 'aggressive';
+  plannedTrips?: PlannedTrip[];
+  currentSpeciesCount?: number;
+}
+
+export interface PlannerResponse {
+  plan: BigYearPlan;
 }
 
 // App State
