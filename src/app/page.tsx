@@ -81,17 +81,20 @@ function ImportModal({
   onImport,
   currentGoal,
   onGoalChange,
+  onReset,
 }: {
   onClose: () => void;
   onImport: (species: string[]) => void;
   currentGoal: number;
   onGoalChange: (goal: number) => void;
+  onReset: () => void;
 }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pasteText, setPasteText] = useState('');
   const [goalInput, setGoalInput] = useState(String(currentGoal));
   const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [activeTab, setActiveTab] = useState<'csv' | 'paste' | 'goal'>('csv');
+  const [activeTab, setActiveTab] = useState<'csv' | 'paste' | 'goal' | 'reset'>('csv');
+  const [confirmReset, setConfirmReset] = useState(false);
 
   const handleCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -164,6 +167,7 @@ function ImportModal({
     { id: 'csv' as const, label: 'CSV Upload' },
     { id: 'paste' as const, label: 'Paste List' },
     { id: 'goal' as const, label: 'Edit Goal' },
+    { id: 'reset' as const, label: 'Reset' },
   ];
 
   return (
@@ -181,11 +185,15 @@ function ImportModal({
           {tabs.map(t => (
             <button
               key={t.id}
-              onClick={() => { setActiveTab(t.id); setStatus(null); }}
+              onClick={() => { setActiveTab(t.id); setStatus(null); setConfirmReset(false); }}
               className={`flex-1 py-3 text-sm font-medium transition-colors ${
-                activeTab === t.id
-                  ? 'text-green-700 border-b-2 border-green-600'
-                  : 'text-gray-500 hover:text-gray-700'
+                t.id === 'reset'
+                  ? activeTab === 'reset'
+                    ? 'text-red-600 border-b-2 border-red-500'
+                    : 'text-red-400 hover:text-red-600'
+                  : activeTab === t.id
+                    ? 'text-green-700 border-b-2 border-green-600'
+                    : 'text-gray-500 hover:text-gray-700'
               }`}
             >
               {t.label}
@@ -272,6 +280,38 @@ function ImportModal({
             </div>
           )}
 
+          {activeTab === 'reset' && (
+            <div>
+              <p className="text-sm text-gray-600 mb-6">
+                This clears your species list, eBird key, location, and goal from this device. Your account data in the cloud is not affected.
+              </p>
+              {!confirmReset ? (
+                <button
+                  onClick={() => setConfirmReset(true)}
+                  className="w-full py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium text-sm transition-colors"
+                >
+                  Reset All App Data
+                </button>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-sm font-semibold text-red-700 text-center">Are you sure? This cannot be undone.</p>
+                  <button
+                    onClick={() => { onReset(); onClose(); }}
+                    className="w-full py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 font-bold text-sm transition-colors"
+                  >
+                    Yes, Reset Everything
+                  </button>
+                  <button
+                    onClick={() => setConfirmReset(false)}
+                    className="w-full py-2.5 border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50 text-sm transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Status message */}
           {status && (
             <div className={`mt-4 p-3 rounded-lg text-sm font-medium ${
@@ -311,9 +351,18 @@ export default function Dashboard() {
   const neededPerDay = daysRemaining > 0 ? ((bigYearGoal - userSpecies.length) / daysRemaining) : 0;
 
   const handleImport = (species: string[]) => {
-    // Merge with existing list (deduplicate)
     const merged = Array.from(new Set([...userSpecies, ...species]));
     setUserSpecies(merged);
+  };
+
+  const handleReset = () => {
+    setApiKey(null);
+    setUserSpecies([]);
+    setBigYearGoal(300);
+    // Clear all localStorage keys
+    ['ebird-api-key', 'big-year-species', 'big-year-goal', 'big-year-year', 'big-year-location'].forEach(
+      k => localStorage.removeItem(k)
+    );
   };
 
   if (!apiKey) {
@@ -527,6 +576,7 @@ export default function Dashboard() {
           onImport={handleImport}
           currentGoal={bigYearGoal}
           onGoalChange={setBigYearGoal}
+          onReset={handleReset}
         />
       )}
 
