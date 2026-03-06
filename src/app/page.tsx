@@ -376,37 +376,10 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* Returning user: sign in is the primary action */}
-        {!user && (
-          <div className="bg-green-900 text-white rounded-2xl p-6 mb-6">
-            <h2 className="font-bold text-lg mb-1">Already have an account?</h2>
-            <p className="text-green-300 text-sm mb-4">Sign in to load your eBird key and species list automatically.</p>
-            <button
-              onClick={() => setShowAuth(true)}
-              className="w-full py-3 bg-white text-green-900 rounded-xl font-bold text-base hover:bg-green-50 transition-colors"
-            >
-              Sign In
-            </button>
-            <button
-              onClick={() => setShowAuth(true)}
-              className="w-full mt-2 py-2.5 text-green-300 text-sm hover:text-white transition-colors"
-            >
-              New here? Create a free account →
-            </button>
-          </div>
-        )}
-
-        {user && (
-          <div className="bg-green-50 border border-green-200 rounded-2xl p-4 mb-6 text-center">
-            <div className="text-green-700 font-medium text-sm">Signed in as {user.email}</div>
-            <div className="text-green-600 text-xs mt-0.5">Enter your eBird key below to finish setup</div>
-          </div>
-        )}
-
-        {/* eBird key setup */}
-        <div className="mb-8">
+        {/* Primary: eBird key entry */}
+        <div className="mb-6">
           <h2 className="text-base font-semibold text-gray-800 mb-3 text-center">
-            {user ? 'Connect to eBird' : 'Or connect manually with your eBird key'}
+            Enter your eBird key to get started
           </h2>
           <ApiKeyInput onApiKeySet={setApiKey} />
           <p className="text-center text-xs text-gray-400 mt-2">
@@ -416,6 +389,23 @@ export default function Dashboard() {
             </a>
           </p>
         </div>
+
+        {/* Optional: sign in to sync */}
+        {user ? (
+          <div className="text-center text-xs text-green-700 bg-green-50 border border-green-200 rounded-xl py-2.5 px-4 mb-6">
+            Signed in as {user.email} — your data will sync automatically
+          </div>
+        ) : (
+          <div className="text-center mb-6">
+            <p className="text-xs text-gray-400 mb-1">Have an account?</p>
+            <button
+              onClick={() => setShowAuth(true)}
+              className="text-sm text-green-600 hover:text-green-800 font-medium underline underline-offset-2"
+            >
+              Sign in to sync your data across devices
+            </button>
+          </div>
+        )}
 
         {/* Feature preview */}
         <div className="grid grid-cols-2 gap-3">
