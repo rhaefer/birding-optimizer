@@ -15,7 +15,7 @@ const TRAVEL_OPTIONS = [
 ];
 
 export default function PlannerPage() {
-  const { apiKey, userLocation, userSpecies, bigYearGoal, setBigYearGoal, bigYearYear, setBigYearYear, setUserLocation } = useApp();
+  const { userLocation, userSpecies, bigYearGoal, setBigYearGoal, bigYearYear, setBigYearYear, setUserLocation } = useApp();
 
   const [lat, setLat] = useState<number | null>(userLocation?.lat ?? null);
   const [lng, setLng] = useState<number | null>(userLocation?.lng ?? null);
@@ -71,21 +71,19 @@ export default function PlannerPage() {
       setBigYearYear(year);
       setExpandedMonth(null);
 
-      // Fetch actual nearby hotspots if API key is available
-      if (apiKey) {
-        try {
-          const params = new URLSearchParams({ apiKey, lat: String(lat), lng: String(lng), dist: '50' });
-          const hsRes = await fetch(`/api/hotspots?${params}`);
-          if (hsRes.ok) {
-            const hsData = await hsRes.json();
-            const sorted = (hsData.hotspots as EBirdHotspot[])
-              .sort((a, b) => (b.numSpeciesAllTime ?? 0) - (a.numSpeciesAllTime ?? 0))
-              .slice(0, 20);
-            setNearbyHotspots(sorted);
-          }
-        } catch {
-          // Hotspot fetch failing shouldn't break the plan
+      // Fetch nearby hotspots
+      try {
+        const params = new URLSearchParams({ lat: String(lat), lng: String(lng), dist: '50' });
+        const hsRes = await fetch(`/api/hotspots?${params}`);
+        if (hsRes.ok) {
+          const hsData = await hsRes.json();
+          const sorted = (hsData.hotspots as EBirdHotspot[])
+            .sort((a, b) => (b.numSpeciesAllTime ?? 0) - (a.numSpeciesAllTime ?? 0))
+            .slice(0, 20);
+          setNearbyHotspots(sorted);
         }
+      } catch {
+        // Hotspot fetch failing shouldn't break the plan
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to generate plan');

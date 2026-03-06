@@ -8,7 +8,6 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const {
-      apiKey,
       lat,
       lng,
       maxDistance = 50,
@@ -16,11 +15,9 @@ export async function POST(request: NextRequest) {
       userSpecies = [],
     } = body;
 
+    const apiKey = process.env.EBIRD_API_KEY;
     if (!apiKey) {
-      return NextResponse.json(
-        { error: 'API key is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
     }
 
     if (lat === undefined || lng === undefined) {

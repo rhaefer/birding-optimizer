@@ -6,9 +6,10 @@ import { BirdSearchObservation, SpeciesSearchResult } from '@/types';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { apiKey, query, lat, lng, dist = 50, daysBack = 30 } = body;
+    const { query, lat, lng, dist = 50, daysBack = 30 } = body;
 
-    if (!apiKey) return NextResponse.json({ error: 'API key required' }, { status: 400 });
+    const apiKey = process.env.EBIRD_API_KEY;
+    if (!apiKey) return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
     if (!query?.trim()) return NextResponse.json({ error: 'Search query required' }, { status: 400 });
     if (lat === undefined || lng === undefined) {
       return NextResponse.json({ error: 'Location required' }, { status: 400 });

@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useApp } from '@/components/AppProvider';
-import ApiKeyInput from '@/components/ApiKeyInput';
 import AuthModal from '@/components/AuthModal';
 
 const FEATURES = [
@@ -283,7 +282,7 @@ function ImportModal({
           {activeTab === 'reset' && (
             <div>
               <p className="text-sm text-gray-600 mb-6">
-                This clears your species list, eBird key, location, and goal from this device. Your account data in the cloud is not affected.
+                This clears your species list, location, and goal from this device. Your account data in the cloud is not affected.
               </p>
               {!confirmReset ? (
                 <button
@@ -332,7 +331,7 @@ function ImportModal({
 }
 
 export default function Dashboard() {
-  const { apiKey, setApiKey, userSpecies, setUserSpecies, bigYearGoal, setBigYearGoal, bigYearYear, user } = useApp();
+  const { userSpecies, setUserSpecies, bigYearGoal, setBigYearGoal, bigYearYear, user } = useApp();
   const [isInitialized, setIsInitialized] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
@@ -356,72 +355,12 @@ export default function Dashboard() {
   };
 
   const handleReset = () => {
-    setApiKey(null);
     setUserSpecies([]);
     setBigYearGoal(300);
-    // Clear all localStorage keys
-    ['ebird-api-key', 'big-year-species', 'big-year-goal', 'big-year-year', 'big-year-location'].forEach(
+    ['big-year-species', 'big-year-goal', 'big-year-year', 'big-year-location'].forEach(
       k => localStorage.removeItem(k)
     );
   };
-
-  if (!apiKey) {
-    return (
-      <div className="max-w-lg mx-auto px-4 py-8">
-        <div className="text-center mb-8">
-          <div className="text-6xl mb-3">🦅</div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Big Year Birding App</h1>
-          <p className="text-gray-600">
-            Hotspot optimizer, rare alerts, bird search, and month-by-month planning.
-          </p>
-        </div>
-
-        {/* Primary: eBird key entry */}
-        <div className="mb-6">
-          <h2 className="text-base font-semibold text-gray-800 mb-3 text-center">
-            Enter your eBird key to get started
-          </h2>
-          <ApiKeyInput onApiKeySet={setApiKey} />
-          <p className="text-center text-xs text-gray-400 mt-2">
-            Free key at{' '}
-            <a href="https://ebird.org/api/keygen" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline">
-              ebird.org/api/keygen
-            </a>
-          </p>
-        </div>
-
-        {/* Optional: sign in to sync */}
-        {user ? (
-          <div className="text-center text-xs text-green-700 bg-green-50 border border-green-200 rounded-xl py-2.5 px-4 mb-6">
-            Signed in as {user.email} — your data will sync automatically
-          </div>
-        ) : (
-          <div className="text-center mb-6">
-            <p className="text-xs text-gray-400 mb-1">Have an account?</p>
-            <button
-              onClick={() => setShowAuth(true)}
-              className="text-sm text-green-600 hover:text-green-800 font-medium underline underline-offset-2"
-            >
-              Sign in to sync your data across devices
-            </button>
-          </div>
-        )}
-
-        {/* Feature preview */}
-        <div className="grid grid-cols-2 gap-3">
-          {FEATURES.map((f) => (
-            <div key={f.href} className={`border-2 rounded-xl p-3 ${colorMap[f.color]}`}>
-              <div className="text-2xl mb-1">{f.icon}</div>
-              <h3 className="font-semibold text-gray-800 text-sm">{f.title}</h3>
-              <p className="text-xs text-gray-500 mt-0.5 leading-snug">{f.description}</p>
-            </div>
-          ))}
-        </div>
-
-        {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">

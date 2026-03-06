@@ -16,7 +16,7 @@ const BirdSearchMap = dynamic(() => import('@/components/BirdSearchMap'), {
 });
 
 export default function BirdSearchPage() {
-  const { apiKey, userLocation, userSpecies } = useApp();
+  const { userLocation, userSpecies } = useApp();
 
   const [query, setQuery] = useState('');
   const [searchLat, setSearchLat] = useState<number | null>(userLocation?.lat ?? null);
@@ -57,7 +57,7 @@ export default function BirdSearchPage() {
   };
 
   const doSearch = useCallback(async (speciesQuery: string) => {
-    if (!apiKey || !speciesQuery.trim() || searchLat === null || searchLng === null) return;
+    if (!speciesQuery.trim() || searchLat === null || searchLng === null) return;
 
     setIsLoading(true);
     setError(null);
@@ -69,7 +69,7 @@ export default function BirdSearchPage() {
       const res = await fetch('/api/bird-search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ apiKey, query: speciesQuery, lat: searchLat, lng: searchLng, dist: milesToKm(dist), daysBack }),
+        body: JSON.stringify({ query: speciesQuery, lat: searchLat, lng: searchLng, dist: milesToKm(dist), daysBack }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Search failed');
@@ -82,10 +82,10 @@ export default function BirdSearchPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [apiKey, searchLat, searchLng, dist, daysBack]);
+  }, [searchLat, searchLng, dist, daysBack]);
 
   const switchSpecies = async (species: SpeciesSearchResult) => {
-    if (!apiKey || searchLat === null || searchLng === null) return;
+    if (searchLat === null || searchLng === null) return;
     setIsLoading(true);
     setSelectedSpecies(species);
     setObservations([]);
@@ -94,7 +94,7 @@ export default function BirdSearchPage() {
       const res = await fetch('/api/bird-search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ apiKey, query: species.comName, lat: searchLat, lng: searchLng, dist: milesToKm(dist), daysBack }),
+        body: JSON.stringify({ query: species.comName, lat: searchLat, lng: searchLng, dist: milesToKm(dist), daysBack }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
@@ -109,16 +109,6 @@ export default function BirdSearchPage() {
   const alreadySeen = selectedSpecies
     ? userSpecies.some((s) => s.toLowerCase() === selectedSpecies.comName.toLowerCase() || s === selectedSpecies.speciesCode)
     : false;
-
-  if (!apiKey) {
-    return (
-      <div className="max-w-xl mx-auto py-16 text-center">
-        <div className="text-5xl mb-4">🔑</div>
-        <h2 className="text-xl font-bold text-gray-800 mb-2">API Key Required</h2>
-        <p className="text-gray-600">Please return to the Dashboard and connect your eBird API key first.</p>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">

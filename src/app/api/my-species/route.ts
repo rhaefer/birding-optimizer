@@ -4,16 +4,13 @@ import { MySpeciesResponse } from '@/types';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
-  const apiKey = searchParams.get('apiKey');
   const lat = searchParams.get('lat');
   const lng = searchParams.get('lng');
   const daysBack = searchParams.get('daysBack') || '365';
 
+  const apiKey = process.env.EBIRD_API_KEY;
   if (!apiKey) {
-    return NextResponse.json(
-      { error: 'API key is required' },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
   }
 
   if (!lat || !lng) {

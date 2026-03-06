@@ -25,7 +25,7 @@ const DEFAULT_FILTERS: FilterSettings = {
 };
 
 export default function OptimizerPage() {
-  const { apiKey, userLocation: savedLocation, setUserLocation: saveLocation, userSpecies, setUserSpecies } = useApp();
+  const { userLocation: savedLocation, setUserLocation: saveLocation, userSpecies, setUserSpecies } = useApp();
 
   const [userLocation, setUserLocation] = useState<UserLocation | null>(savedLocation);
   const [filters, setFilters] = useState<FilterSettings>(DEFAULT_FILTERS);
@@ -47,7 +47,7 @@ export default function OptimizerPage() {
   };
 
   const fetchRecommendations = useCallback(async () => {
-    if (!apiKey || !searchLocation) return;
+    if (!searchLocation) return;
 
     setIsLoading(true);
     setError(null);
@@ -57,7 +57,6 @@ export default function OptimizerPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          apiKey,
           lat: searchLocation.lat,
           lng: searchLocation.lng,
           maxDistance: filters.maxDistance,
@@ -84,17 +83,7 @@ export default function OptimizerPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [apiKey, searchLocation, filters, userSpecies]);
-
-  if (!apiKey) {
-    return (
-      <div className="max-w-xl mx-auto py-16 text-center">
-        <div className="text-5xl mb-4">🔑</div>
-        <h2 className="text-xl font-bold text-gray-800 mb-2">API Key Required</h2>
-        <p className="text-gray-600 mb-4">Please return to the Dashboard and connect your eBird API key first.</p>
-      </div>
-    );
-  }
+  }, [searchLocation, filters, userSpecies]);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">

@@ -16,7 +16,7 @@ const AlertsMap = dynamic(() => import('@/components/AlertsMap'), {
 });
 
 export default function AlertsPage() {
-  const { apiKey, userLocation, userSpecies } = useApp();
+  const { userLocation, userSpecies } = useApp();
 
   const [lat, setLat] = useState<number | null>(userLocation?.lat ?? null);
   const [lng, setLng] = useState<number | null>(userLocation?.lng ?? null);
@@ -53,7 +53,7 @@ export default function AlertsPage() {
   };
 
   const fetchAlerts = useCallback(async () => {
-    if (!apiKey || lat === null || lng === null) return;
+    if (lat === null || lng === null) return;
 
     setIsLoading(true);
     setError(null);
@@ -64,7 +64,7 @@ export default function AlertsPage() {
       const res = await fetch('/api/rare-alerts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ apiKey, lat, lng, dist: milesToKm(dist), daysBack, userSpecies }),
+        body: JSON.stringify({ lat, lng, dist: milesToKm(dist), daysBack, userSpecies }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to fetch alerts');
@@ -75,7 +75,7 @@ export default function AlertsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [apiKey, lat, lng, dist, daysBack, userSpecies]);
+  }, [lat, lng, dist, daysBack, userSpecies]);
 
   const displayedAlerts = showNewOnly ? alerts.filter((a) => a.isNew) : alerts;
   const newCount = alerts.filter((a) => a.isNew).length;
@@ -86,16 +86,6 @@ export default function AlertsPage() {
     if (days === 1) return 'Yesterday';
     return `${days}d ago`;
   };
-
-  if (!apiKey) {
-    return (
-      <div className="max-w-xl mx-auto py-16 text-center">
-        <div className="text-5xl mb-4">🔑</div>
-        <h2 className="text-xl font-bold text-gray-800 mb-2">API Key Required</h2>
-        <p className="text-gray-600">Please return to the Dashboard and connect your eBird API key first.</p>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
