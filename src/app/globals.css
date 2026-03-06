@@ -41,6 +41,17 @@ body {
   background: #a8a8a8;
 }
 
+/* Safe area + bottom nav spacing */
+.main-content {
+  padding-bottom: calc(4rem + env(safe-area-inset-bottom));
+}
+
+@media (min-width: 768px) {
+  .main-content {
+    padding-bottom: 0;
+  }
+}
+
 /* Leaflet marker styles */
 .leaflet-container {
   font-family: inherit;

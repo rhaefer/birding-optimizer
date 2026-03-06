@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useApp } from '@/components/AppProvider';
 import ApiKeyInput from '@/components/ApiKeyInput';
+import AuthModal from '@/components/AuthModal';
 
 const FEATURES = [
   {
@@ -172,7 +173,7 @@ function ImportModal({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <h2 className="font-bold text-gray-900 text-lg">Import eBird Data</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-100 -mr-2">&times;</button>
         </div>
 
         {/* Tabs */}
@@ -181,7 +182,7 @@ function ImportModal({
             <button
               key={t.id}
               onClick={() => { setActiveTab(t.id); setStatus(null); }}
-              className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
+              className={`flex-1 py-3 text-sm font-medium transition-colors ${
                 activeTab === t.id
                   ? 'text-green-700 border-b-2 border-green-600'
                   : 'text-gray-500 hover:text-gray-700'
@@ -252,7 +253,7 @@ function ImportModal({
                   <button
                     key={n}
                     onClick={() => setGoalInput(String(n))}
-                    className={`flex-1 py-1.5 text-sm rounded-lg border transition-colors ${
+                    className={`flex-1 py-2.5 text-sm rounded-lg border transition-colors ${
                       goalInput === String(n)
                         ? 'bg-green-600 text-white border-green-600'
                         : 'border-gray-200 text-gray-600 hover:border-green-400'
@@ -291,9 +292,10 @@ function ImportModal({
 }
 
 export default function Dashboard() {
-  const { apiKey, setApiKey, userSpecies, setUserSpecies, bigYearGoal, setBigYearGoal, bigYearYear } = useApp();
+  const { apiKey, setApiKey, userSpecies, setUserSpecies, bigYearGoal, setBigYearGoal, bigYearYear, user } = useApp();
   const [isInitialized, setIsInitialized] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
 
   useEffect(() => { setIsInitialized(true); }, []);
 
@@ -326,7 +328,7 @@ export default function Dashboard() {
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
           {FEATURES.map((f) => (
             <div key={f.href} className={`border-2 rounded-xl p-4 ${colorMap[f.color]}`}>
               <div className="text-3xl mb-2">{f.icon}</div>
@@ -346,17 +348,35 @@ export default function Dashboard() {
         </div>
 
         <div className="max-w-md mx-auto">
+          {/* Auth prompt */}
+          <div className="mb-4">
+            {user ? (
+              <div className="text-center text-sm text-green-700 bg-green-50 border border-green-200 rounded-xl py-2.5 px-4">
+                Signed in as {user.email} — your data syncs automatically
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowAuth(true)}
+                className="w-full py-2.5 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-xl hover:bg-green-100 transition-colors"
+              >
+                Sign in to save your data across devices
+              </button>
+            )}
+          </div>
+
           <h2 className="text-lg font-semibold text-gray-800 mb-3 text-center">
-            Connect your eBird API key to get started
+            Connect to eBird to get started
           </h2>
           <ApiKeyInput onApiKeySet={setApiKey} />
           <p className="text-center text-sm text-gray-500 mt-3">
-            Free API key at{' '}
+            Free key at{' '}
             <a href="https://ebird.org/api/keygen" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline">
               ebird.org/api/keygen
             </a>
           </p>
         </div>
+
+        {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
       </div>
     );
   }
@@ -432,12 +452,25 @@ export default function Dashboard() {
               No species logged yet — click <strong>Import eBird Data</strong> above to load your year list.
             </p>
           )}
-          <button
-            onClick={() => setShowImport(true)}
-            className="text-green-400 hover:text-green-200 text-xs underline underline-offset-2 ml-4 shrink-0"
-          >
-            Edit goal
-          </button>
+          <div className="flex items-center gap-3 ml-4 shrink-0">
+            {user && (
+              <span className="text-green-500 text-xs">☁ synced</span>
+            )}
+            {!user && (
+              <button
+                onClick={() => setShowAuth(true)}
+                className="text-green-400 hover:text-green-200 text-xs underline underline-offset-2"
+              >
+                Sign in
+              </button>
+            )}
+            <button
+              onClick={() => setShowImport(true)}
+              className="text-green-400 hover:text-green-200 text-xs underline underline-offset-2"
+            >
+              Edit goal
+            </button>
+          </div>
         </div>
       </div>
 
@@ -493,6 +526,9 @@ export default function Dashboard() {
           onGoalChange={setBigYearGoal}
         />
       )}
+
+      {/* Auth modal */}
+      {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
     </div>
   );
 }

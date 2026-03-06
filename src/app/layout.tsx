@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { AppProvider } from '@/components/AppProvider';
@@ -9,6 +9,12 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: 'Big Year - Birding App',
   description: 'The ultimate app for Big Year birding: hotspot optimizer, rare bird alerts, bird search, and month-by-month planning.',
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({
@@ -29,7 +35,7 @@ export default function RootLayout({
       <body className={`${inter.className} bg-gray-50 min-h-screen`}>
         <AppProvider>
           <Navigation />
-          <main className="pb-16 md:pb-0">{children}</main>
+          <main className="main-content">{children}</main>
         </AppProvider>
       </body>
     </html>

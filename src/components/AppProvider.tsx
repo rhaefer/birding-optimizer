@@ -1,6 +1,8 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react';
+import { User } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase';
 import { UserLocation } from '@/types';
 
 interface AppContextType {
@@ -15,6 +17,8 @@ interface AppContextType {
   setBigYearGoal: (goal: number) => void;
   setBigYearYear: (year: number) => void;
   isInitialized: boolean;
+  user: User | null;
+  signOut: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType>({
@@ -29,6 +33,8 @@ const AppContext = createContext<AppContextType>({
   setBigYearGoal: () => {},
   setBigYearYear: () => {},
   isInitialized: false,
+  user: null,
+  signOut: async () => {},
 });
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -38,9 +44,67 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [bigYearGoal, setBigYearGoalState] = useState(300);
   const [bigYearYear, setBigYearYearState] = useState(new Date().getFullYear());
   const [isInitialized, setIsInitialized] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
 
-  // Load from localStorage on mount
+  // Refs for stale-closure-safe access inside debounced callbacks
+  const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const userRef = useRef<User | null>(null);
+  const latestState = useRef({ apiKey, userLocation, userSpecies, bigYearGoal, bigYearYear });
+
+  useEffect(() => { userRef.current = user; }, [user]);
   useEffect(() => {
+    latestState.current = { apiKey, userLocation, userSpecies, bigYearGoal, bigYearYear };
+  }, [apiKey, userLocation, userSpecies, bigYearGoal, bigYearYear]);
+
+  const loadProfile = useCallback(async (userId: string) => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (error || !data) return; // No profile yet — created on first mutation
+
+    if (data.ebird_key) {
+      setApiKeyState(data.ebird_key);
+      localStorage.setItem('ebird-api-key', data.ebird_key);
+    }
+    if (data.location) {
+      setUserLocationState(data.location);
+      localStorage.setItem('big-year-location', JSON.stringify(data.location));
+    }
+    if (data.species && Array.isArray(data.species)) {
+      setUserSpeciesState(data.species);
+      localStorage.setItem('big-year-species', JSON.stringify(data.species));
+    }
+    if (data.big_year_goal) {
+      setBigYearGoalState(data.big_year_goal);
+      localStorage.setItem('big-year-goal', String(data.big_year_goal));
+    }
+    if (data.big_year_year) {
+      setBigYearYearState(data.big_year_year);
+      localStorage.setItem('big-year-year', String(data.big_year_year));
+    }
+  }, []);
+
+  const syncToSupabase = useCallback((userId: string) => {
+    if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
+    syncTimeoutRef.current = setTimeout(async () => {
+      const s = latestState.current;
+      await supabase.from('profiles').upsert({
+        id: userId,
+        ebird_key: s.apiKey,
+        location: s.userLocation,
+        species: s.userSpecies,
+        big_year_goal: s.bigYearGoal,
+        big_year_year: s.bigYearYear,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'id' });
+    }, 1500);
+  }, []);
+
+  useEffect(() => {
+    // 1. Fast local load
     try {
       const key = localStorage.getItem('ebird-api-key');
       const loc = localStorage.getItem('big-year-location');
@@ -54,36 +118,77 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (goal) setBigYearGoalState(parseInt(goal));
       if (yr) setBigYearYearState(parseInt(yr));
     } catch {
-      // localStorage may not be available in SSR
+      // localStorage not available in SSR
     }
-    setIsInitialized(true);
-  }, []);
+
+    // 2. Check Supabase session and load cloud profile
+    const initAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUser(session.user);
+        userRef.current = session.user;
+        await loadProfile(session.user.id);
+      }
+      setIsInitialized(true);
+    };
+
+    initAuth();
+
+    // 3. Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user) {
+          setUser(session.user);
+          userRef.current = session.user;
+          if (event === 'SIGNED_IN') {
+            await loadProfile(session.user.id);
+          }
+        } else {
+          setUser(null);
+          userRef.current = null;
+        }
+      }
+    );
+
+    return () => { subscription.unsubscribe(); };
+  }, [loadProfile]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const setApiKey = useCallback((key: string | null) => {
     setApiKeyState(key);
     if (key) localStorage.setItem('ebird-api-key', key);
     else localStorage.removeItem('ebird-api-key');
-  }, []);
+    if (userRef.current) syncToSupabase(userRef.current.id);
+  }, [syncToSupabase]);
 
   const setUserLocation = useCallback((loc: UserLocation | null) => {
     setUserLocationState(loc);
     if (loc) localStorage.setItem('big-year-location', JSON.stringify(loc));
     else localStorage.removeItem('big-year-location');
-  }, []);
+    if (userRef.current) syncToSupabase(userRef.current.id);
+  }, [syncToSupabase]);
 
   const setUserSpecies = useCallback((species: string[]) => {
     setUserSpeciesState(species);
     localStorage.setItem('big-year-species', JSON.stringify(species));
-  }, []);
+    if (userRef.current) syncToSupabase(userRef.current.id);
+  }, [syncToSupabase]);
 
   const setBigYearGoal = useCallback((goal: number) => {
     setBigYearGoalState(goal);
     localStorage.setItem('big-year-goal', String(goal));
-  }, []);
+    if (userRef.current) syncToSupabase(userRef.current.id);
+  }, [syncToSupabase]);
 
   const setBigYearYear = useCallback((year: number) => {
     setBigYearYearState(year);
     localStorage.setItem('big-year-year', String(year));
+    if (userRef.current) syncToSupabase(userRef.current.id);
+  }, [syncToSupabase]);
+
+  const signOut = useCallback(async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    userRef.current = null;
   }, []);
 
   return (
@@ -100,6 +205,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setBigYearGoal,
         setBigYearYear,
         isInitialized,
+        user,
+        signOut,
       }}
     >
       {children}

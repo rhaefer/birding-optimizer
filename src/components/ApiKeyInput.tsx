@@ -51,10 +51,10 @@ export default function ApiKeyInput({ onApiKeySet, initialApiKey = '' }: ApiKeyI
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6 max-w-md">
-      <h2 className="text-xl font-semibold text-gray-800 mb-4">eBird API Key</h2>
+      <h2 className="text-xl font-semibold text-gray-800 mb-4">Connect to eBird</h2>
 
       <p className="text-gray-600 text-sm mb-4">
-        Enter your eBird API key to get started. You can get a free API key from{' '}
+        Enter your free eBird access key to get started. Get yours at{' '}
         <a
           href="https://ebird.org/api/keygen"
           target="_blank"
@@ -68,7 +68,7 @@ export default function ApiKeyInput({ onApiKeySet, initialApiKey = '' }: ApiKeyI
       <div className="space-y-4">
         <div>
           <label htmlFor="apiKey" className="block text-sm font-medium text-gray-700 mb-1">
-            API Key
+            eBird Access Key
           </label>
           <input
             type="password"
@@ -79,8 +79,8 @@ export default function ApiKeyInput({ onApiKeySet, initialApiKey = '' }: ApiKeyI
               setIsValid(false);
               setError(null);
             }}
-            placeholder="Enter your eBird API key"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Paste your eBird access key"
+            className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-base"
             disabled={isValidating}
           />
         </div>
@@ -93,16 +93,16 @@ export default function ApiKeyInput({ onApiKeySet, initialApiKey = '' }: ApiKeyI
 
         {isValid && (
           <div className="text-green-600 text-sm bg-green-50 p-2 rounded">
-            API key validated successfully!
+            Connected to eBird successfully!
           </div>
         )}
 
         <button
           onClick={validateKey}
           disabled={isValidating || !apiKey.trim()}
-          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+          className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors text-base font-medium"
         >
-          {isValidating ? 'Validating...' : 'Validate & Continue'}
+          {isValidating ? 'Connecting...' : 'Connect & Continue'}
         </button>
       </div>
     </div>
