@@ -3,18 +3,26 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { AppProvider } from '@/components/AppProvider';
 import Navigation from '@/components/Navigation';
+import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Big Year - Birding App',
   description: 'The ultimate app for Big Year birding: hotspot optimizer, rare bird alerts, bird search, and month-by-month planning.',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Big Year',
+  },
 };
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
+  themeColor: '#14532d',
 };
 
 export default function RootLayout({
@@ -36,6 +44,7 @@ export default function RootLayout({
         <AppProvider>
           <Navigation />
           <main className="main-content">{children}</main>
+          <ServiceWorkerRegistration />
         </AppProvider>
       </body>
     </html>

@@ -1,0 +1,26 @@
+{
+  "name": "Big Year Birding App",
+  "short_name": "Big Year",
+  "description": "Hotspot optimizer, rare alerts, bird search, and Big Year planning.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#14532d",
+  "theme_color": "#14532d",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-icon",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["lifestyle", "navigation", "sports"],
+  "screenshots": []
+}
