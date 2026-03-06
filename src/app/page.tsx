@@ -318,62 +318,65 @@ export default function Dashboard() {
 
   if (!apiKey) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="text-center mb-10">
-          <div className="text-6xl mb-4">🦅</div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-3">Big Year Birding App</h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            The all-in-one tool for serious birders chasing a Big Year. Optimize hotspots,
-            track rare alerts, search any species, and plan your year.
+      <div className="max-w-lg mx-auto px-4 py-8">
+        <div className="text-center mb-8">
+          <div className="text-6xl mb-3">🦅</div>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Big Year Birding App</h1>
+          <p className="text-gray-600">
+            Hotspot optimizer, rare alerts, bird search, and month-by-month planning.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
-          {FEATURES.map((f) => (
-            <div key={f.href} className={`border-2 rounded-xl p-4 ${colorMap[f.color]}`}>
-              <div className="text-3xl mb-2">{f.icon}</div>
-              <h3 className="font-semibold text-gray-800 mb-1">{f.title}</h3>
-              <p className="text-sm text-gray-600">{f.description}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className="bg-green-900 text-white rounded-xl p-5 mb-8">
-          <h2 className="font-bold text-lg mb-2">Why Big Year App?</h2>
-          <p className="text-green-200 text-sm leading-relaxed">
-            eBird tracks what you have seen. Merlin identifies birds. But no existing app tells you
-            where to go next to maximize your year list — until now. Big Year combines eBird data
-            with smart optimization for proactive, actionable guidance every month of the year.
-          </p>
-        </div>
-
-        <div className="max-w-md mx-auto">
-          {/* Auth prompt */}
-          <div className="mb-4">
-            {user ? (
-              <div className="text-center text-sm text-green-700 bg-green-50 border border-green-200 rounded-xl py-2.5 px-4">
-                Signed in as {user.email} — your data syncs automatically
-              </div>
-            ) : (
-              <button
-                onClick={() => setShowAuth(true)}
-                className="w-full py-2.5 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-xl hover:bg-green-100 transition-colors"
-              >
-                Sign in to save your data across devices
-              </button>
-            )}
+        {/* Returning user: sign in is the primary action */}
+        {!user && (
+          <div className="bg-green-900 text-white rounded-2xl p-6 mb-6">
+            <h2 className="font-bold text-lg mb-1">Already have an account?</h2>
+            <p className="text-green-300 text-sm mb-4">Sign in to load your eBird key and species list automatically.</p>
+            <button
+              onClick={() => setShowAuth(true)}
+              className="w-full py-3 bg-white text-green-900 rounded-xl font-bold text-base hover:bg-green-50 transition-colors"
+            >
+              Sign In
+            </button>
+            <button
+              onClick={() => setShowAuth(true)}
+              className="w-full mt-2 py-2.5 text-green-300 text-sm hover:text-white transition-colors"
+            >
+              New here? Create a free account →
+            </button>
           </div>
+        )}
 
-          <h2 className="text-lg font-semibold text-gray-800 mb-3 text-center">
-            Connect to eBird to get started
+        {user && (
+          <div className="bg-green-50 border border-green-200 rounded-2xl p-4 mb-6 text-center">
+            <div className="text-green-700 font-medium text-sm">Signed in as {user.email}</div>
+            <div className="text-green-600 text-xs mt-0.5">Enter your eBird key below to finish setup</div>
+          </div>
+        )}
+
+        {/* eBird key setup */}
+        <div className="mb-8">
+          <h2 className="text-base font-semibold text-gray-800 mb-3 text-center">
+            {user ? 'Connect to eBird' : 'Or connect manually with your eBird key'}
           </h2>
           <ApiKeyInput onApiKeySet={setApiKey} />
-          <p className="text-center text-sm text-gray-500 mt-3">
+          <p className="text-center text-xs text-gray-400 mt-2">
             Free key at{' '}
             <a href="https://ebird.org/api/keygen" target="_blank" rel="noopener noreferrer" className="text-green-600 hover:underline">
               ebird.org/api/keygen
             </a>
           </p>
+        </div>
+
+        {/* Feature preview */}
+        <div className="grid grid-cols-2 gap-3">
+          {FEATURES.map((f) => (
+            <div key={f.href} className={`border-2 rounded-xl p-3 ${colorMap[f.color]}`}>
+              <div className="text-2xl mb-1">{f.icon}</div>
+              <h3 className="font-semibold text-gray-800 text-sm">{f.title}</h3>
+              <p className="text-xs text-gray-500 mt-0.5 leading-snug">{f.description}</p>
+            </div>
+          ))}
         </div>
 
         {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
