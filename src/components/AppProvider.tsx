@@ -167,9 +167,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [syncToSupabase]);
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
     setUser(null);
     userRef.current = null;
+    await supabase.auth.signOut().catch(() => {});
   }, []);
 
   return (

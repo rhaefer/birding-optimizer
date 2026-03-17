@@ -15,13 +15,18 @@ export default function AuthModal({ onClose }: AuthModalProps) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
+  const friendlyError = (msg: string) =>
+    msg === 'Failed to fetch'
+      ? 'Cannot reach the server. The service may be temporarily unavailable — please try again in a minute.'
+      : msg;
+
   const handleSignIn = async () => {
     setLoading(true);
     setError(null);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
-      setError(error.message);
+      setError(friendlyError(error.message));
     } else {
       onClose();
     }
@@ -33,7 +38,7 @@ export default function AuthModal({ onClose }: AuthModalProps) {
     const { error } = await supabase.auth.signUp({ email, password });
     setLoading(false);
     if (error) {
-      setError(error.message);
+      setError(friendlyError(error.message));
     } else {
       setSuccess('Account created! Check your email to confirm, then sign in.');
     }
