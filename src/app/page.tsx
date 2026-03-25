@@ -100,6 +100,9 @@ function ImportModal({
     if (!file) return;
     setStatus(null);
 
+    // Non-contiguous US states/territories to exclude for Lower 48 Big Year
+    const EXCLUDE_STATES = new Set(['US-AK', 'US-HI', 'US-PR', 'US-VI', 'US-GU', 'US-AS', 'US-MP', 'US-UM']);
+
     const reader = new FileReader();
     reader.onload = (ev) => {
       const text = ev.target?.result as string;
@@ -109,6 +112,7 @@ function ImportModal({
       const header = parseCSVLine(lines[0]);
       const nameIdx = header.findIndex(h => h.toLowerCase().includes('common name') || h.toLowerCase() === 'common_name');
       const dateIdx = header.findIndex(h => h.toLowerCase() === 'date' || h.toLowerCase().includes('observation date'));
+      const stateIdx = header.findIndex(h => h.toLowerCase().includes('state') || h.toLowerCase().includes('province'));
 
       if (nameIdx === -1) {
         setStatus({ type: 'error', message: 'Could not find "Common Name" column. Is this an eBird MyEBirdData.csv export?' });
@@ -124,21 +128,27 @@ function ImportModal({
         const cols = parseCSVLine(line);
         const name = cols[nameIdx]?.trim();
         const dateStr = dateIdx >= 0 ? cols[dateIdx]?.trim() : null;
+        const stateCode = stateIdx >= 0 ? cols[stateIdx]?.trim() : null;
 
         if (dateStr && new Date(dateStr).getFullYear() !== currentYear) continue;
         if (!name || name.length < 2) continue;
         if (name.includes('/') || name.includes(' sp.') || name.includes(' x ')) continue;
 
+        // Only count birds observed in the lower 48 states
+        if (stateCode !== null) {
+          if (!stateCode.startsWith('US-') || EXCLUDE_STATES.has(stateCode)) continue;
+        }
+
         speciesSet.add(name);
       }
 
       if (speciesSet.size === 0) {
-        setStatus({ type: 'error', message: `No species found for ${currentYear}. Make sure observations from this year are in the file.` });
+        setStatus({ type: 'error', message: `No species found for ${currentYear} in the lower 48 states. Make sure observations from this year are in the file.` });
         return;
       }
 
       onImport(Array.from(speciesSet));
-      setStatus({ type: 'success', message: `Imported ${speciesSet.size} species from your ${currentYear} eBird data.` });
+      setStatus({ type: 'success', message: `Imported ${speciesSet.size} species from your ${currentYear} lower 48 eBird data.` });
     };
     reader.readAsText(file);
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -210,7 +220,7 @@ function ImportModal({
               <ol className="text-sm text-gray-600 space-y-2 mb-4 list-decimal list-inside">
                 <li>Go to <a href="https://ebird.org/downloadMyData" target="_blank" rel="noopener noreferrer" className="text-green-600 underline font-medium">ebird.org/downloadMyData</a></li>
                 <li>Click <strong>Download My Data</strong> to get your CSV</li>
-                <li>Upload below — only {new Date().getFullYear()} species are imported</li>
+                <li>Upload below — only {new Date().getFullYear()} lower 48 species are imported</li>
               </ol>
               <label className="flex items-center justify-center w-full py-4 px-4 border-2 border-dashed border-green-300 rounded-xl cursor-pointer hover:border-green-500 hover:bg-green-50 transition-colors">
                 <div className="text-center">
